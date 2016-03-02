@@ -73,9 +73,14 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #define TOKUDB_CHECK_JEMALLOC 1
 #endif
 
+#if defined(TOKUDB_NOPATCH_CONFIG) && TOKUDB_NOPATCH_CONFIG
+#define TOKU_USE_DB_TYPE_UNKNOWN 1
+#define TOKU_INCLUDE_ROW_TYPE_COMPRESSION 0 // has tokudb row format compression patch
+#else
 #define TOKU_USE_DB_TYPE_TOKUDB 1           // has DB_TYPE_TOKUDB patch
-#define TOKU_INCLUDE_ALTER_56 1
 #define TOKU_INCLUDE_ROW_TYPE_COMPRESSION 1 // has tokudb row format compression patch
+#endif
+#define TOKU_INCLUDE_ALTER_56 1
 #define TOKU_PARTITION_WRITE_FRM_DATA 0
 #define TOKU_INCLUDE_WRITE_FRM_DATA 0
 #if defined(HTON_SUPPORTS_EXTENDED_KEYS)
