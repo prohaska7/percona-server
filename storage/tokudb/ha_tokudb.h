@@ -669,11 +669,11 @@ private:
     int acquire_table_lock (DB_TXN* trans, TABLE_LOCK_TYPE lt);
     int estimate_num_rows(DB* db, uint64_t* num_rows, DB_TXN* txn);
     bool has_auto_increment_flag(uint* index);
-
+#if TOKU_INCLUDE_DISCOVER_FRM
     int write_frm_data(DB* db, DB_TXN* txn, const char* frm_name);
     int verify_frm_data(const char* frm_name, DB_TXN* trans);
     int remove_frm_data(DB *db, DB_TXN *txn);
-
+#endif
     int write_to_status(DB* db, HA_METADATA_KEY curr_key_data, void* data, uint size, DB_TXN* txn);
     int remove_from_status(DB* db, HA_METADATA_KEY curr_key_data, DB_TXN* txn);
 
@@ -681,8 +681,8 @@ private:
     int remove_metadata(DB* db, void* key_data, uint key_size, DB_TXN* transaction);
 
     int update_max_auto_inc(DB* db, ulonglong val);
-    int remove_key_name_from_status(DB* status_block, char* key_name, DB_TXN* txn);
-    int write_key_name_to_status(DB* status_block, char* key_name, DB_TXN* txn);
+    int remove_key_name_from_status(DB* status_block, const char* key_name, DB_TXN* txn);
+    int write_key_name_to_status(DB* status_block, const char* key_name, DB_TXN* txn);
     int write_auto_inc_create(DB* db, ulonglong val, DB_TXN* txn);
     void init_auto_increment();
     bool can_replace_into_be_fast(TABLE_SHARE* table_share, KEY_AND_COL_INFO* kc_info, uint pk);
@@ -862,7 +862,11 @@ public:
     bool primary_key_is_clustered() const {
         return true;
     }
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+    int cmp_ref(const uchar * ref1, const uchar * ref2) const;
+#else
     int cmp_ref(const uchar * ref1, const uchar * ref2);
+#endif
     bool check_if_incompatible_data(HA_CREATE_INFO * info, uint table_changes);
 
 #ifdef MARIADB_BASE_VERSION

@@ -154,6 +154,7 @@ inline toku_compression_method row_type_to_toku_compression_method(
 
 void tokudb_checkpoint_lock(THD * thd);
 void tokudb_checkpoint_unlock(THD * thd);
+#include "current_thd.h"
 
 inline uint64_t tokudb_get_lock_wait_time_callback(uint64_t default_wait_time) {
     THD *thd = current_thd;

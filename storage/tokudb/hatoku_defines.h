@@ -35,7 +35,9 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #include "log.h"
 #include "sql_class.h"
 #include "sql_show.h"
+#if !(80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
 #include "discover.h"
+#endif
 #include <binlog.h>
 #include "debug_sync.h"
 
@@ -69,9 +71,17 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #pragma interface               /* gcc class implementation */
 #endif
 
+#if (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
+#define TOKU_USE_DB_TYPE_UNKNOWN 1
+#define TOKU_INCLUDE_ALTER_56 0
+#define TOKU_INCLUDE_ROW_TYPE_COMPRESSION 0
+#define TOKU_INCLUDE_DISCOVER_FRM 0
+#else
 #define TOKU_USE_DB_TYPE_TOKUDB 1           // has DB_TYPE_TOKUDB patch
 #define TOKU_INCLUDE_ALTER_56 1
 #define TOKU_INCLUDE_ROW_TYPE_COMPRESSION 1 // has tokudb row format compression patch
+#define TOKU_INCLUDE_DISCOVER_FRM 1
+#endif
 #define TOKU_PARTITION_WRITE_FRM_DATA 0
 #define TOKU_INCLUDE_WRITE_FRM_DATA 0
 #if defined(HTON_SUPPORTS_EXTENDED_KEYS)
@@ -183,5 +193,12 @@ inline uint tokudb_uint3korr(const uchar *a) {
     memcpy(b, a, 3);
     return uint3korr(b);
 }
+
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+#define SSV System_status_var
+#define my_hash_get_key hash_get_key_function
+#define my_hash_free_key hash_free_element_function
+#define key_map Key_map
+#endif
 
 #endif // _HATOKU_DEFINES_H

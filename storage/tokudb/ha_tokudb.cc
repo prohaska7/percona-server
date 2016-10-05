@@ -29,7 +29,9 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #include "tokudb_status.h"
 #include "tokudb_card.h"
 #include "ha_tokudb.h"
-
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+#include "mysqld.h"
+#endif
 
 HASH TOKUDB_SHARE::_open_tables;
 tokudb::thread::mutex_t TOKUDB_SHARE::_open_tables_mutex;
@@ -154,7 +156,7 @@ void TOKUDB_SHARE::static_init() {
         table_alias_charset,
         32,
         0,
-        0,
+        // 0,
         (my_hash_get_key)hash_get_key,
         (my_hash_free_key)hash_free_element, 0,
         0); // TODO: instrument for PFS
@@ -486,7 +488,8 @@ static inline bool do_ignore_flag_optimization(
 #if TOKU_INCLUDE_EXTENDED_KEYS
 static inline uint get_ext_key_parts(const KEY *key) {
 #if (50609 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50699) || \
-    (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799)
+    (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+    (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
     return key->actual_key_parts;
 #elif defined(MARIADB_BASE_VERSION)
     return key->ext_key_parts;
@@ -1704,7 +1707,7 @@ int ha_tokudb::initialize_share(const char* name, int mode) {
         error = ENOSYS;
         goto exit;
     }
-
+#if TOKU_INCLUDE_DISCOVER_FRM
 #if WITH_PARTITION_STORAGE_ENGINE
     // verify frm data for non-partitioned tables
     if (TOKU_PARTITION_WRITE_FRM_DATA || table->part_info == NULL) {
@@ -1722,7 +1725,7 @@ int ha_tokudb::initialize_share(const char* name, int mode) {
     if (error)
         goto exit;
 #endif
-
+#endif
     error =
         initialize_key_and_col_info(
             table_share,
@@ -2146,6 +2149,8 @@ cleanup:
     return error;
 }
 
+#if TOKU_INCLUDE_DISCOVER_FRM
+
 int ha_tokudb::write_frm_data(DB* db, DB_TXN* txn, const char* frm_name) {
     TOKUDB_HANDLER_DBUG_ENTER("%p %p %s", db, txn, frm_name);
 
@@ -2234,6 +2239,8 @@ cleanup:
     tokudb::memory::free(stored_frm.data);
     TOKUDB_HANDLER_DBUG_RETURN(error);
 }
+
+#endif
 
 //
 // Updates status.tokudb with a new max value used for the auto increment column
@@ -3268,7 +3275,11 @@ ha_rows ha_tokudb::estimate_rows_upper_bound() {
 // Function that compares two primary keys that were saved as part of rnd_pos
 // and ::position
 //
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+int ha_tokudb::cmp_ref(const uchar * ref1, const uchar * ref2) const {
+#else
 int ha_tokudb::cmp_ref(const uchar * ref1, const uchar * ref2) {
+#endif
     int ret_val = 0;
     bool read_string = false;
     ret_val = tokudb_compare_two_keys(
@@ -6306,7 +6317,7 @@ int ha_tokudb::info(uint flag) {
 
     if (flag & HA_STATUS_AUTO && table->found_next_number_field) {
         THD* thd = table->in_use;
-        struct system_variables* variables = &thd->variables;
+        struct System_variables* variables = &thd->variables;
         stats.auto_increment_value =
             share->last_auto_increment + variables->auto_increment_increment;
     }
@@ -6920,7 +6931,7 @@ void ha_tokudb::update_create_info(HA_CREATE_INFO* create_info) {
 // during drop table, we do not attempt to remove already dropped
 // indexes because we did not keep status.tokudb in sync with list of indexes.
 //
-int ha_tokudb::remove_key_name_from_status(DB* status_block, char* key_name, DB_TXN* txn) {
+int ha_tokudb::remove_key_name_from_status(DB* status_block, const char* key_name, DB_TXN* txn) {
     int error;
     uchar status_key_info[FN_REFLEN + sizeof(HA_METADATA_KEY)];
     HA_METADATA_KEY md_key = hatoku_key_name;
@@ -6946,7 +6957,7 @@ int ha_tokudb::remove_key_name_from_status(DB* status_block, char* key_name, DB_
 // writes the key name in status.tokudb, so that we may later delete or rename
 // the dictionary associated with key_name
 //
-int ha_tokudb::write_key_name_to_status(DB* status_block, char* key_name, DB_TXN* txn) {
+int ha_tokudb::write_key_name_to_status(DB* status_block, const char* key_name, DB_TXN* txn) {
     int error;
     uchar status_key_info[FN_REFLEN + sizeof(HA_METADATA_KEY)];
     HA_METADATA_KEY md_key = hatoku_key_name;
@@ -7408,6 +7419,7 @@ int ha_tokudb::create(
         goto cleanup;
     }
 
+#if TOKU_INCLUDE_DISCOVER_FRM
 #if WITH_PARTITION_STORAGE_ENGINE
     if (TOKU_PARTITION_WRITE_FRM_DATA || form->part_info == NULL) {
         error = write_frm_data(status_block, txn, form->s->path.str);
@@ -7421,7 +7433,7 @@ int ha_tokudb::create(
         goto cleanup;
     }
 #endif
-
+#endif
     error = allocate_key_and_col_info(form->s, &kc_info);
     if (error) {
         goto cleanup;

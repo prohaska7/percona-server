@@ -93,6 +93,7 @@ static int tokudb_discover_table_existence(
     const char* db,
     const char* name);
 #endif
+#if TOKU_INCLUDE_DISCOVER_FRM
 static int tokudb_discover(
     handlerton* hton,
     THD* thd,
@@ -116,6 +117,8 @@ static int tokudb_discover3(
     char* path,
     uchar** frmblob,
     size_t* frmlen);
+#endif
+
 handlerton* tokudb_hton;
 
 const char* ha_tokudb_ext = ".tokudb";
@@ -354,7 +357,9 @@ static int tokudb_init_func(void *p) {
     tokudb_hton->discover_table = tokudb_discover_table;
     tokudb_hton->discover_table_existence = tokudb_discover_table_existence;
 #else
+#if TOKU_INCLUDE_DISCOVER_FRM
     tokudb_hton->discover = tokudb_discover;
+#endif
 #if defined(MYSQL_HANDLERTON_INCLUDE_DISCOVER2)
     tokudb_hton->discover2 = tokudb_discover2;
 #endif
@@ -770,7 +775,11 @@ bool tokudb_flush_logs(handlerton * hton, bool binlog_group_commit) {
         //
         error = db_env->txn_checkpoint(db_env, 0, 0, 0);
         if (error) {
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+            my_error(ER_ERROR_DURING_FLUSH_LOGS, MYF(0), error);
+#else
             my_error(ER_ERROR_DURING_CHECKPOINT, MYF(0), error);
+#endif
             result = 1;
             goto exit;
         }
@@ -845,7 +854,9 @@ static void tokudb_cleanup_handlers(tokudb_trx_data *trx, DB_TXN *txn) {
     }
 }
 
-#if MYSQL_VERSION_ID >= 50600
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+#include "sql_thd_internal_api.h"
+#elif MYSQL_VERSION_ID >= 50600
 extern "C" enum durability_properties thd_get_durability_property(
     const MYSQL_THD thd);
 #endif
@@ -1163,6 +1174,7 @@ static int tokudb_discover_table_existence(
 }
 #endif
 
+#if TOKU_INCLUDE_DISCOVER_FRM
 static int tokudb_discover(
     handlerton* hton,
     THD* thd,
@@ -1260,7 +1272,7 @@ cleanup:
     }
     TOKUDB_DBUG_RETURN(error);
 }
-
+#endif
 
 #define STATPRINT(legend, val) if (legend != NULL && val != NULL) \
     stat_print(thd, \
@@ -1505,7 +1517,11 @@ static void tokudb_cleanup_log_files(void) {
     int error;
 
     if ((error = db_env->txn_checkpoint(db_env, 0, 0, 0)))
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+        my_error(ER_GET_ERRNO, MYF(0), error, "");
+#else
         my_error(ER_ERROR_DURING_CHECKPOINT, MYF(0), error);
+#endif
 
     if ((error = db_env->log_archive(db_env, &names, 0)) != 0) {
         DBUG_PRINT("error", ("log_archive failed (error %d)", error));

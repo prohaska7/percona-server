@@ -40,7 +40,8 @@ void* multi_malloc(myf myFlags, ...);
 
 
 inline void* malloc(size_t s, myf flags) {
-#if 50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799
+#if (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+    (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
     return ::my_malloc(0, s, flags);
 #else
     return ::my_malloc(s, flags);
@@ -49,7 +50,8 @@ inline void* malloc(size_t s, myf flags) {
 inline void* realloc(void* p, size_t s, myf flags) {
     if (s == 0)
         return p;
-#if 50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799
+#if (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+    (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
     return ::my_realloc(0, p, s, flags);
 #else
     return ::my_realloc(p, s, flags);
@@ -60,7 +62,8 @@ inline void free(void* ptr) {
         ::my_free(ptr);
 }
 inline char* strdup(const char* p, myf flags) {
-#if 50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799
+#if (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+    (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
     return ::my_strdup(0, p, flags);
 #else
     return ::my_strdup(p, flags);
