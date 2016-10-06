@@ -913,7 +913,11 @@ public:
 #if TOKU_INCLUDE_ALTER_56
  public:
     enum_alter_inplace_result check_if_supported_inplace_alter(TABLE *altered_table, Alter_inplace_info *ha_alter_info);
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+    bool prepare_inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info, dd::Table *);
+#else
     bool prepare_inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info);
+#endif
     bool inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info);
     bool commit_inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info, bool commit);
  private:

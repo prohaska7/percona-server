@@ -28,7 +28,8 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #if 100000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 100099
 #define TOKU_ALTER_RENAME ALTER_RENAME
 #elif (50600 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50699) || \
-      (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799)
+      (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+      (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
 #define TOKU_ALTER_RENAME ALTER_RENAME
 #elif 50500 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50599
 #define TOKU_ALTER_RENAME ALTER_RENAME_56
@@ -540,7 +541,11 @@ enum_alter_inplace_result ha_tokudb::check_if_supported_inplace_alter(
 // Prepare for the alter operations
 bool ha_tokudb::prepare_inplace_alter_table(
     TABLE* altered_table,
+#if 80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099
+    Alter_inplace_info* ha_alter_info, dd::Table *ddtable) {
+#else
     Alter_inplace_info* ha_alter_info) {
+#endif
 
     TOKUDB_HANDLER_DBUG_ENTER("");
     tokudb_alter_ctx* ctx =
