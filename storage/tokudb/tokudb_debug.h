@@ -134,7 +134,7 @@ static void tokudb_backtrace(void);
 }
 
 #define TOKUDB_SHARE_TRACE(_fmt, ...) \
-    fprintf(stderr, "%u %p %s:%u TOUDB_SHARE::%s " _fmt "\n", \
+    fprintf(stderr, "%u %p %s:%u TOKUDB_SHARE::%s " _fmt "\n", \
             tokudb::thread::my_tid(), this, __FILE__, __LINE__, \
             __FUNCTION__, ##__VA_ARGS__);
 
