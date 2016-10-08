@@ -7318,6 +7318,15 @@ int ha_tokudb::create(
     form->s->write_frm_image();
 #endif
 
+    toku_compression_method compression_method;
+    bool create_from_engine;
+
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+    error = tokudb_lookup_compression(create_info->compress.str ? create_info->compress.str : "default", &compression_method);
+    if (error)
+        goto cleanup;
+#else
+    {
 #if TOKU_INCLUDE_OPTION_STRUCTS
     const tokudb::sysvars::format_t row_format =
         (tokudb::sysvars::row_format_t)form->s->option_struct->row_format;
@@ -7327,10 +7336,12 @@ int ha_tokudb::create(
         ? row_type_to_row_format(create_info->row_type)
         : tokudb::sysvars::row_format(thd);
 #endif
-    const toku_compression_method compression_method =
+    compression_method =
         row_format_to_toku_compression_method(row_format);
+    }
+#endif
 
-    bool create_from_engine = (create_info->table_options & HA_OPTION_CREATE_FROM_ENGINE);
+    create_from_engine = (create_info->table_options & HA_OPTION_CREATE_FROM_ENGINE);
     if (create_from_engine) {
         // table already exists, nothing to do
         error = 0;

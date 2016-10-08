@@ -505,6 +505,17 @@ enum_alter_inplace_result ha_tokudb::check_if_supported_inplace_alter(
                 result = HA_ALTER_INPLACE_EXCLUSIVE_LOCK;
             }
         }
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+        else if (only_flags(create_info->used_fields, HA_CREATE_USED_COMPRESS)) {
+            toku_compression_method method;
+            if (tokudb_lookup_compression(create_info->compress.str, &method) == 0) {
+                // do a sanity check that the table is what we think it is
+                if (tables_have_same_keys_and_columns(table, altered_table, tokudb::sysvars::alter_print_error(thd) != 0)) {
+                    result = HA_ALTER_INPLACE_EXCLUSIVE_LOCK;
+                }
+            }
+        }
+#endif
     }
 #if TOKU_OPTIMIZE_WITH_RECREATE
     else if (only_flags(
@@ -600,20 +611,33 @@ bool ha_tokudb::inplace_alter_table(
     }
     if (error == 0 &&
         (ctx->handler_flags & Alter_inplace_info::CHANGE_CREATE_OPTION) &&
-        (create_info->used_fields & HA_CREATE_USED_ROW_FORMAT)) {
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+        (create_info->used_fields & (HA_CREATE_USED_ROW_FORMAT|HA_CREATE_USED_COMPRESS))) {
+#else
+        (create_info->used_fields & (HA_CREATE_USED_ROW_FORMAT))) {
+#endif
         // Get the current compression
         DB *db = share->key_file[0];
         error = db->get_compression_method(db, &ctx->orig_compression_method);
         assert_always(error == 0);
 
         // Set the new compression
+        toku_compression_method method = TOKU_ZLIB_WITHOUT_CHECKSUM_METHOD;
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+        if ((create_info->used_fields & HA_CREATE_USED_COMPRESS)) {
+            error = tokudb_lookup_compression(create_info->compress.str, &method);
+            assert_always(error == 0);
+        }
+#endif
+#if TOKU_INCLUDE_ROW_TYPE_COMPRESSION            
+        {
 #if TOKU_INCLUDE_OPTION_STRUCTS
-        toku_compression_method method =
-            row_format_to_toku_compression_method(
+            method = row_format_to_toku_compression_method(
                 (tokudb::sysvars::row_format_t)create_info->option_struct->row_format);
 #else
-        toku_compression_method method =
-            row_type_to_toku_compression_method(create_info->row_type);
+            method = row_type_to_toku_compression_method(create_info->row_type);
+#endif
+        }
 #endif
         uint32_t curr_num_DBs = table->s->keys + tokudb_test(hidden_primary_key);
         for (uint32_t i = 0; i < curr_num_DBs; i++) {

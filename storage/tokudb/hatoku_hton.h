@@ -39,6 +39,7 @@ extern handlerton* tokudb_hton;
 
 extern DB_ENV* db_env;
 
+#if 0
 inline tokudb::sysvars::row_format_t toku_compression_method_to_row_format(
     toku_compression_method method) {
 
@@ -151,6 +152,31 @@ inline toku_compression_method row_type_to_toku_compression_method(
 
     return row_format_to_toku_compression_method(row_type_to_row_format(type));
 }
+#endif
+
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+struct {
+    const char *name; toku_compression_method method;
+} tokudb_compression_algorithms[] = {
+    { "uncompressed", TOKU_NO_COMPRESSION },
+    { "zlib", TOKU_ZLIB_WITHOUT_CHECKSUM_METHOD },
+    { "snappy", TOKU_SNAPPY_METHOD },
+    { "quicklz", TOKU_QUICKLZ_METHOD },
+    { "lzma", TOKU_LZMA_METHOD },
+};
+
+inline int tokudb_lookup_compression(const char *name, toku_compression_method *method) {
+    if (strcmp(name, "default") == 0)
+        name = "zlib";
+    for (unsigned int i = 0; i < sizeof tokudb_compression_algorithms / sizeof tokudb_compression_algorithms[0]; i++) {
+        if (strcmp(tokudb_compression_algorithms[i].name, name) == 0) {
+            *method = tokudb_compression_algorithms[i].method;
+            return 0;
+        }
+    }
+    return EINVAL;
+}
+#endif
 
 void tokudb_checkpoint_lock(THD * thd);
 void tokudb_checkpoint_unlock(THD * thd);

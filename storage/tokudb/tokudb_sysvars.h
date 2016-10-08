@@ -41,6 +41,7 @@ enum empty_scan_mode_t {
     TOKUDB_EMPTY_SCAN_RL = 2,
 };
 
+#if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
 enum row_format_t {
     SRV_ROW_FORMAT_UNCOMPRESSED = 0,
     SRV_ROW_FORMAT_ZLIB = 1,
@@ -51,6 +52,7 @@ enum row_format_t {
     SRV_ROW_FORMAT_SMALL = 6,
     SRV_ROW_FORMAT_DEFAULT = 7
 };
+#endif
 
 #define DEFAULT_TOKUDB_CLEANER_ITERATIONS 5
 #define DEFAULT_TOKUDB_CLEANER_PERIOD 1
@@ -132,7 +134,9 @@ void        set_pk_insert_mode(THD* thd, uint mode);
 my_bool     prelock_empty(THD* thd);
 uint        read_block_size(THD* thd);
 uint        read_buf_size(THD* thd);
+#if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
 row_format_t row_format(THD *thd);
+#endif
 my_bool     rpl_check_readonly(THD* thd);
 my_bool     rpl_lookup_rows(THD* thd);
 ulonglong   rpl_lookup_rows_delay(THD* thd);

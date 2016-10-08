@@ -770,6 +770,7 @@ static MYSQL_THDVAR_UINT(
     1*1024*1024,
     1);
 
+#if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
 static const char *tokudb_row_format_names[] = {
     "tokudb_uncompressed",
     "tokudb_zlib",
@@ -799,6 +800,7 @@ static MYSQL_THDVAR_ENUM(
     NULL,
     SRV_ROW_FORMAT_ZLIB,
     &tokudb_row_format_typelib);
+#endif
 
 static MYSQL_THDVAR_BOOL(
     rpl_check_readonly,
@@ -963,7 +965,9 @@ st_mysql_sys_var* system_variables[] = {
     MYSQL_SYSVAR(prelock_empty),
     MYSQL_SYSVAR(read_block_size),
     MYSQL_SYSVAR(read_buf_size),
+#if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
     MYSQL_SYSVAR(row_format),
+#endif
     MYSQL_SYSVAR(rpl_check_readonly),
     MYSQL_SYSVAR(rpl_lookup_rows),
     MYSQL_SYSVAR(rpl_lookup_rows_delay),
@@ -1082,9 +1086,11 @@ uint read_block_size(THD* thd) {
 uint read_buf_size(THD* thd) {
     return THDVAR(thd, read_buf_size);
 }
+#if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
 row_format_t row_format(THD *thd) {
     return (row_format_t) THDVAR(thd, row_format);
 }
+#endif
 my_bool rpl_check_readonly(THD* thd) {
     return (THDVAR(thd, rpl_check_readonly) != 0);
 }
