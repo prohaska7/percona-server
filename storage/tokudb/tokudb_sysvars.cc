@@ -642,14 +642,6 @@ static MYSQL_THDVAR_UINT(
     16*1024,
     1);
 
-static MYSQL_THDVAR_BOOL(
-    hide_default_row_format,
-    0,
-    "hide the default row format",
-    NULL,
-    NULL,
-    true);
-
 static MYSQL_THDVAR_ULONGLONG(
     killed_time,
     0,
@@ -770,6 +762,16 @@ static MYSQL_THDVAR_UINT(
     1*1024*1024,
     1);
 
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+static MYSQL_THDVAR_STR(
+    compression,
+    PLUGIN_VAR_THDLOCAL + PLUGIN_VAR_MEMALLOC,
+    "compression algorithm",
+    NULL,
+    NULL,
+    "zlib");
+#endif
+
 #if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
 static const char *tokudb_row_format_names[] = {
     "tokudb_uncompressed",
@@ -800,6 +802,14 @@ static MYSQL_THDVAR_ENUM(
     NULL,
     SRV_ROW_FORMAT_ZLIB,
     &tokudb_row_format_typelib);
+
+static MYSQL_THDVAR_BOOL(
+    hide_default_row_format,
+    0,
+    "hide the default row format",
+    NULL,
+    NULL,
+    true);
 #endif
 
 static MYSQL_THDVAR_BOOL(
@@ -952,7 +962,6 @@ st_mysql_sys_var* system_variables[] = {
     MYSQL_SYSVAR(disable_slow_alter),
     MYSQL_SYSVAR(empty_scan),
     MYSQL_SYSVAR(fanout),
-    MYSQL_SYSVAR(hide_default_row_format),
     MYSQL_SYSVAR(killed_time),
     MYSQL_SYSVAR(last_lock_timeout),
     MYSQL_SYSVAR(load_save_space),
@@ -965,7 +974,11 @@ st_mysql_sys_var* system_variables[] = {
     MYSQL_SYSVAR(prelock_empty),
     MYSQL_SYSVAR(read_block_size),
     MYSQL_SYSVAR(read_buf_size),
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+    MYSQL_SYSVAR(compression),
+#endif
 #if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
+    MYSQL_SYSVAR(hide_default_row_format),
     MYSQL_SYSVAR(row_format),
 #endif
     MYSQL_SYSVAR(rpl_check_readonly),
@@ -1044,9 +1057,6 @@ empty_scan_mode_t empty_scan(THD* thd) {
 uint fanout(THD* thd) {
     return THDVAR(thd, fanout);
 }
-my_bool hide_default_row_format(THD* thd) {
-    return (THDVAR(thd, hide_default_row_format) != 0);
-}
 ulonglong killed_time(THD* thd) {
     return THDVAR(thd, killed_time);
 }
@@ -1086,7 +1096,15 @@ uint read_block_size(THD* thd) {
 uint read_buf_size(THD* thd) {
     return THDVAR(thd, read_buf_size);
 }
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+char *compression(THD *thd) {
+    return THDVAR(thd, compression);
+}
+#endif
 #if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
+my_bool hide_default_row_format(THD* thd) {
+    return (THDVAR(thd, hide_default_row_format) != 0);
+}
 row_format_t row_format(THD *thd) {
     return (row_format_t) THDVAR(thd, row_format);
 }

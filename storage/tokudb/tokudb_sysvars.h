@@ -134,6 +134,9 @@ void        set_pk_insert_mode(THD* thd, uint mode);
 my_bool     prelock_empty(THD* thd);
 uint        read_block_size(THD* thd);
 uint        read_buf_size(THD* thd);
+#if TOKU_INCLUDE_TABLE_COMPRESSION
+char *compression(THD *thd);
+#endif
 #if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
 row_format_t row_format(THD *thd);
 #endif

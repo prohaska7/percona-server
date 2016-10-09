@@ -508,7 +508,7 @@ enum_alter_inplace_result ha_tokudb::check_if_supported_inplace_alter(
 #if TOKU_INCLUDE_TABLE_COMPRESSION
         else if (only_flags(create_info->used_fields, HA_CREATE_USED_COMPRESS)) {
             toku_compression_method method;
-            if (tokudb_lookup_compression(create_info->compress.str, &method) == 0) {
+            if (tokudb_compression_method(create_info->compress.str, &method) == 0) {
                 // do a sanity check that the table is what we think it is
                 if (tables_have_same_keys_and_columns(table, altered_table, tokudb::sysvars::alter_print_error(thd) != 0)) {
                     result = HA_ALTER_INPLACE_EXCLUSIVE_LOCK;
@@ -625,7 +625,7 @@ bool ha_tokudb::inplace_alter_table(
         toku_compression_method method = TOKU_ZLIB_WITHOUT_CHECKSUM_METHOD;
 #if TOKU_INCLUDE_TABLE_COMPRESSION
         if ((create_info->used_fields & HA_CREATE_USED_COMPRESS)) {
-            error = tokudb_lookup_compression(create_info->compress.str, &method);
+            error = tokudb_compression_method(create_info->compress.str, &method);
             assert_always(error == 0);
         }
 #endif

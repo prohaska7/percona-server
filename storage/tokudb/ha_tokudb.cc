@@ -7322,9 +7322,16 @@ int ha_tokudb::create(
     bool create_from_engine;
 
 #if TOKU_INCLUDE_TABLE_COMPRESSION
-    error = tokudb_lookup_compression(create_info->compress.str ? create_info->compress.str : "default", &compression_method);
-    if (error)
-        goto cleanup;
+    if (create_info->compress.str != nullptr) {
+        error = tokudb_compression_method(create_info->compress.str, &compression_method);
+        if (error)
+            goto cleanup;
+    } else {
+        char *compression = tokudb::sysvars::compression(thd);
+        error = tokudb_compression_method(compression, &compression_method);
+        if (error)
+            goto cleanup;
+    }
 #else
     {
 #if TOKU_INCLUDE_OPTION_STRUCTS

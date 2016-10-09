@@ -39,7 +39,7 @@ extern handlerton* tokudb_hton;
 
 extern DB_ENV* db_env;
 
-#if 0
+#if TOKU_INCLUDE_ROW_TYPE_COMPRESSION
 inline tokudb::sysvars::row_format_t toku_compression_method_to_row_format(
     toku_compression_method method) {
 
@@ -165,9 +165,7 @@ struct {
     { "lzma", TOKU_LZMA_METHOD },
 };
 
-inline int tokudb_lookup_compression(const char *name, toku_compression_method *method) {
-    if (strcmp(name, "default") == 0)
-        name = "zlib";
+inline int tokudb_compression_method(const char *name, toku_compression_method *method) {
     for (unsigned int i = 0; i < sizeof tokudb_compression_algorithms / sizeof tokudb_compression_algorithms[0]; i++) {
         if (strcmp(tokudb_compression_algorithms[i].name, name) == 0) {
             *method = tokudb_compression_algorithms[i].method;
