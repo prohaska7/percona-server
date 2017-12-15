@@ -373,6 +373,7 @@ static uint32_t fill_dynamic_row_mutator(
                 pos++;
             }
         }
+        assert(!curr_field->has_insert_default_function());
         if (is_fixed_field(src_kc_info, curr_index)) {
             // we have a fixed field being dropped
             // store the offset and the number of bytes
