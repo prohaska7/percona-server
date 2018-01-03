@@ -1010,8 +1010,15 @@ static int tokudb_xa_prepare(handlerton* hton, THD* thd, bool all) {
         // test hook to induce a crash on a debug build
         DBUG_EXECUTE_IF("tokudb_crash_prepare_after", DBUG_SUICIDE(););
 
-        if (all && thd->slave_thread) {
-            TOKUDB_TRACE("zap txn context %u", thd_sql_command(thd));
+        // XA log entries can be interleaved in the binlog since XA prepare on the master
+        // flushes to the binlog.  There can be log entries from different clients pushed
+        // into the binlog before XA commit is executed on the master.  Therefore, the slave
+        // thread must be able to juggle multiple XA transactions.  Tokudb does this by
+        // zapping the client transaction context on the slave when executing the XA prepare
+        // and expecting to process XA commit with commit_by_xid (which supplies the XID so
+        // that the transaction can be looked up and committed).
+        if (r == 0 && all && thd->slave_thread) {
+            TOKUDB_TRACE_FOR_FLAGS(TOKUDB_DEBUG_XA, "zap txn context %u", thd_sql_command(thd));
             if (thd_sql_command(thd) == SQLCOM_XA_PREPARE) {
                 trx->all = NULL;
                 trx->sub_sp_level = NULL;
