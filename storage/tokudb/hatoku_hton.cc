@@ -981,7 +981,7 @@ static bool tokudb_sync_on_prepare(THD* thd) {
 }   
 
 static int tokudb_xa_prepare(handlerton* hton, THD* thd, bool all) {
-    TOKUDB_DBUG_ENTER("");
+    TOKUDB_DBUG_ENTER("%u", all);
     TOKUDB_TRACE_FOR_FLAGS(TOKUDB_DEBUG_XA, "enter");
     int r = 0;
 
@@ -1009,6 +1009,15 @@ static int tokudb_xa_prepare(handlerton* hton, THD* thd, bool all) {
         r = txn->xa_prepare(txn, &thd_xid, syncflag);
         // test hook to induce a crash on a debug build
         DBUG_EXECUTE_IF("tokudb_crash_prepare_after", DBUG_SUICIDE(););
+
+        if (all && thd->slave_thread) {
+            TOKUDB_TRACE("zap txn context %u", thd_sql_command(thd));
+            if (thd_sql_command(thd) == SQLCOM_XA_PREPARE) {
+                trx->all = NULL;
+                trx->sub_sp_level = NULL;
+                trx->sp_level = NULL;
+            }
+        }
     } else {
         TOKUDB_TRACE_FOR_FLAGS(TOKUDB_DEBUG_XA, "nothing to prepare %d", all);
     }
