@@ -143,9 +143,11 @@ static bool is_variable_field(KEY_AND_COL_INFO *kcinfo, uint field_num) {
     return kcinfo->field_types[field_num] == KEY_AND_COL_INFO::TOKUDB_VARIABLE_FIELD;
 }
 
+#if TOKU_INCLUDE_ALTER_56
 static bool is_blob_field(KEY_AND_COL_INFO *kcinfo, uint field_num) {
     return kcinfo->field_types[field_num] == KEY_AND_COL_INFO::TOKUDB_BLOB_FIELD;
 }
+#endif
 
 static bool field_valid_for_tokudb_table(Field* field);
 
@@ -203,7 +205,8 @@ static inline const uchar* unpack_toku_field_blob(uchar *to_mysql, const uchar* 
 
 static inline uint get_null_offset(TABLE* table, Field* field) {
 #if (50606 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50699) || \
-    (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799)
+    (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+    (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
     return field->null_offset(table->record[0]);
 #else
     return (uint) ((uchar*) field->null_ptr - (uchar*) table->record[0]);
@@ -407,6 +410,7 @@ static uint32_t pack_key_from_desc(
     const DBT* pk_val
     );
 
+#if TOKU_INCLUDE_ALTER_56
 static bool fields_have_same_name(
     Field* a,
     Field* b
@@ -421,6 +425,6 @@ static bool are_two_fields_same(
     Field* a,
     Field* b
     );
-
 #endif
 
+#endif

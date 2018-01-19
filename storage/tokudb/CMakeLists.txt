@@ -52,8 +52,8 @@ IF ((CMAKE_CXX_COMPILER_ID STREQUAL GNU) AND
 ENDIF ()
 
 # check that compiler supports cxx11 and set options
-INCLUDE (check_stdcxx11)
-IF (!HAVE_STDCXX11)
+MY_CHECK_CXX_COMPILER_FLAG("-std=c++11" HAVE_STDCXX11)
+IF (NOT HAVE_STDCXX11)
   MESSAGE (${TOKUDB_STATUS_MODE} "${CMAKE_CXX_COMPILER} doesn't support -std=c++11, you need one that does. Not building TokuDB")
   RETURN ()
 ENDIF ()
@@ -101,11 +101,10 @@ IF(DEFINED TOKUDB_NOPATCH_CONFIG)
     ADD_DEFINITIONS("-DTOKUDB_NOPATCH_CONFIG=${TOKUDB_NOPATCH_CONFIG}")
 ENDIF()
 
-message(STATUS "tokudb ${CMAKE_CXX_FLAGS}")
-prepend_cflags_if_supported(-Wno-missing-field-initializers)
-# append_cflags_if_supported(-Werror=unused-parameter)
-append_cflags_if_supported(-Wno-vla)
-message(STATUS "tokudb ${CMAKE_CXX_FLAGS}")
+# prepend_cflags_if_supported(-Wno-missing-field-initializers)
+set(CMAKE_CXX_FLAGS "-Wno-missing-field-initializers ${CMAKE_CXX_FLAGS}")
+# append_cflags_if_supported(-Wno-vla)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-vla")
 
 IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/PerconaFT/")
     IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ft-index/")

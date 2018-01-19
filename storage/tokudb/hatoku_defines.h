@@ -35,9 +35,11 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #include "log.h"
 #include "sql_class.h"
 #include "sql_show.h"
-#include "discover.h"
 #include <binlog.h>
 #include "debug_sync.h"
+#include "current_thd.h"
+#include "my_icp.h"
+#include "mysqld.h"
 
 #undef PACKAGE
 #undef VERSION
@@ -54,7 +56,6 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 
 #include <ctype.h>
 #include <stdint.h>
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #if defined(_WIN32)
 #include "misc.h"
@@ -69,16 +70,30 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #pragma interface               /* gcc class implementation */
 #endif
 
-#define TOKU_USE_DB_TYPE_TOKUDB 1           // has DB_TYPE_TOKUDB patch
-#define TOKU_INCLUDE_ALTER_56 1
-#define TOKU_INCLUDE_ROW_TYPE_COMPRESSION 1 // has tokudb row format compression patch
+#if TOKUDB_NOPATCH_CONFIG
+#define TOKU_USE_DB_TYPE_UNKNOWN 1
+#else
+#define TOKU_USE_DB_TYPE_TOKUDB 0
+#endif
+#define TOKU_INCLUDE_ALTER_56 0
+#define TOKU_INCLUDE_ALTER_55 0
+#define TOKU_INCLUDE_ROW_TYPE_COMPRESSION 0
 #define TOKU_PARTITION_WRITE_FRM_DATA 0
 #define TOKU_INCLUDE_WRITE_FRM_DATA 0
 #if defined(HTON_SUPPORTS_EXTENDED_KEYS)
-#define TOKU_INCLUDE_EXTENDED_KEYS 1
+#define TOKU_INCLUDE_EXTENDED_KEYS 0
 #endif
-#define TOKU_INCLUDE_RFR 1
 #define TOKU_OPTIMIZE_WITH_RECREATE 1
+
+#define TOKU_INCLUDE_HANDLERTON_HANDLE_FATAL_SIGNAL 0
+#define TOKU_INCLUDE_UPSERT 0
+#define TOKU_INCLUDE_OPTION_STRUCTS 0
+#define TOKU_INCLUDE_LOCK_TIMEOUT_QUERY_STRING 0
+#define TOKU_INCLUDE_RFR 0
+#define TOKU_INCLUDE_DISCOVER_FRM 0
+#define TOKU_USE_OPEN_TABLES_MAP 1
+
+#define TOKU_CLUSTERING_IS_COVERING 0
 
 #ifdef MARIADB_BASE_VERSION
 // In MariaDB 5.3, thread progress reporting was introduced.
@@ -90,7 +105,7 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #else
 // MySQL does not support thdvar memalloc correctly
 // see http://bugs.mysql.com/bug.php?id=71759
-#define TOKU_THDVAR_MEMALLOC_BUG 1
+#define TOKU_THDVAR_MEMALLOC_BUG 0
 #endif
 
 #if !defined(HA_CLUSTERING)
@@ -167,7 +182,7 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #define TOKUDB_UNLIKELY(cond) TOKUDB_EXPECT(cond, 0)
 
 // Tell the compiler that the function/argument is unused
-#define TOKUDB_UNUSED(_uu) _uu __attribute__((unused))
+#define TOKUDB_UNUSED(_uu) _uu MY_ATTRIBUTE((unused))
 // mysql 5.6.15 removed the test macro, so we define our own
 #define tokudb_test(e) ((e) ? 1 : 0)
 
@@ -202,5 +217,7 @@ typedef unsigned int pfs_key_t;
 #define rwlock_t_lock_read(M) M.lock_read()
 #define rwlock_t_lock_write(M) M.lock_write()
 #endif  // HAVE_PSI_RWLOCK_INTERFACE
+
+typedef bool my_bool;
 
 #endif  // _HATOKU_DEFINES_H

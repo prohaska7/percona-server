@@ -676,11 +676,11 @@ private:
     int acquire_table_lock (DB_TXN* trans, TABLE_LOCK_TYPE lt);
     int estimate_num_rows(DB* db, uint64_t* num_rows, DB_TXN* txn);
     bool has_auto_increment_flag(uint* index);
-
+#if TOKU_INCLUDE_DISCOVER_FRM
     int write_frm_data(DB* db, DB_TXN* txn, const char* frm_name);
     int verify_frm_data(const char* frm_name, DB_TXN* trans);
     int remove_frm_data(DB *db, DB_TXN *txn);
-
+#endif
     int write_to_status(DB* db, HA_METADATA_KEY curr_key_data, void* data, uint size, DB_TXN* txn);
     int remove_from_status(DB* db, HA_METADATA_KEY curr_key_data, DB_TXN* txn);
 
@@ -688,8 +688,8 @@ private:
     int remove_metadata(DB* db, void* key_data, uint key_size, DB_TXN* transaction);
 
     int update_max_auto_inc(DB* db, ulonglong val);
-    int remove_key_name_from_status(DB* status_block, char* key_name, DB_TXN* txn);
-    int write_key_name_to_status(DB* status_block, char* key_name, DB_TXN* txn);
+    int remove_key_name_from_status(DB* status_block, const char* key_name, DB_TXN* txn);
+    int write_key_name_to_status(DB* status_block, const char* key_name, DB_TXN* txn);
     int write_auto_inc_create(DB* db, ulonglong val, DB_TXN* txn);
     void init_auto_increment();
     bool can_replace_into_be_fast(TABLE_SHARE* table_share, KEY_AND_COL_INFO* kc_info, uint pk);
@@ -775,11 +775,12 @@ public:
     //
     uint max_supported_key_part_length() const {
         return UINT_MAX32;
-    } 
-    const key_map *keys_to_use_for_scanning() {
+    }
+#if 0    
+    const Key_map *keys_to_use_for_scanning() {
         return &key_map_full;
     }
-
+#endif
     double scan_time();
 
     double read_time(uint index, uint ranges, ha_rows rows);
@@ -790,12 +791,15 @@ public:
     // Defined in mysql 5.6
     double index_only_read_time(uint keynr, double records);
 
-    int open(const char *name, int mode, uint test_if_locked);
+    int open(const char *name, int mode, uint test_if_locked,
+             const dd::Table *table_def);
     int close();
     void update_create_info(HA_CREATE_INFO* create_info);
-    int create(const char *name, TABLE * form, HA_CREATE_INFO * create_info);
-    int delete_table(const char *name);
-    int rename_table(const char *from, const char *to);
+    int create(const char *name, TABLE * form, HA_CREATE_INFO * create_info,
+               dd::Table *table_def);
+    int delete_table(const char *name, const dd::Table *table_def);
+    int rename_table(const char *from, const char *to,
+                     const dd::Table *from_table_def, dd::Table *to_table_def);
     int optimize(THD * thd, HA_CHECK_OPT * check_opt);
     int analyze(THD * thd, HA_CHECK_OPT * check_opt);
     int write_row(uchar * buf);
@@ -878,13 +882,15 @@ public:
     bool is_optimize_blocking();
     bool is_auto_inc_singleton();
     void print_error(int error, myf errflag);
+#if 0
     uint8 table_cache_type() {
         return HA_CACHE_TBL_TRANSACT;
     }
+#endif
     bool primary_key_is_clustered() const {
         return true;
     }
-    int cmp_ref(const uchar * ref1, const uchar * ref2);
+    int cmp_ref(const uchar * ref1, const uchar * ref2) const;
     bool check_if_incompatible_data(HA_CREATE_INFO * info, uint table_changes);
 
 #ifdef MARIADB_BASE_VERSION
@@ -931,9 +937,12 @@ public:
 #if TOKU_INCLUDE_ALTER_56
  public:
     enum_alter_inplace_result check_if_supported_inplace_alter(TABLE *altered_table, Alter_inplace_info *ha_alter_info);
-    bool prepare_inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info);
-    bool inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info);
-    bool commit_inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info, bool commit);
+    bool prepare_inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info,
+                                     const dd::Table *, dd::Table *);
+    bool inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info,
+                             const dd::Table *, dd::Table *);
+    bool commit_inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info, bool commit,
+                                    const dd::Table *, dd::Table *);
  private:
     int alter_table_add_index(TABLE *altered_table, Alter_inplace_info *ha_alter_info);
     int alter_table_drop_index(TABLE *altered_table, Alter_inplace_info *ha_alter_info);
@@ -979,8 +988,8 @@ public:
  public:
     // delete all rows from the table
     // effect: all dictionaries, including the main and indexes, should be empty
-    int discard_or_import_tablespace(my_bool discard);
-    int truncate();
+    int discard_or_import_tablespace(my_bool discard, dd::Table *table_def);
+    int truncate(dd::Table *table_def);
     int delete_all_rows();
     void extract_hidden_primary_key(uint keynr, DBT const *found_key);
     void read_key_only(uchar * buf, uint keynr, DBT const *found_key);

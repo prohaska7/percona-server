@@ -54,6 +54,7 @@ static bool field_valid_for_tokudb_table(Field* field) {
     case MYSQL_TYPE_FLOAT:
 #if (50600 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50699) || \
     (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+    (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099) || \
     (100000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 100099)
     case MYSQL_TYPE_DATETIME2:
     case MYSQL_TYPE_TIMESTAMP2:
@@ -201,6 +202,7 @@ static TOKU_TYPE mysql_to_toku_type (Field* field) {
         goto exit;
 #if (50600 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50699) || \
     (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+    (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099) || \
     (100000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 100099)
     case MYSQL_TYPE_DATETIME2:
     case MYSQL_TYPE_TIMESTAMP2:
@@ -917,11 +919,10 @@ static inline int cmp_toku_string(
 
     ret_val = charset->coll->strnncollsp(
         charset,
-        a_buf, 
+        a_buf,
         a_num_bytes,
-        b_buf, 
-        b_num_bytes, 
-        0
+        b_buf,
+        b_num_bytes
         );
     return ret_val;
 }
@@ -3034,6 +3035,7 @@ static uint32_t pack_key_from_desc(
     return (uint32_t)(packed_key_pos - buf);
 }
 
+#if TOKU_INCLUDE_ALTER_56
 static bool fields_have_same_name(Field* a, Field* b) {
     return strcmp(a->field_name, b->field_name) == 0;
 }
@@ -3126,6 +3128,7 @@ static bool fields_are_same_type(Field* a, Field* b) {
     case MYSQL_TYPE_TIMESTAMP:
 #if (50600 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50699) || \
     (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+    (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099) || \
     (100000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 100099)
     case MYSQL_TYPE_DATETIME2:
     case MYSQL_TYPE_TIMESTAMP2:
@@ -3219,5 +3222,6 @@ cleanup:
 static bool are_two_fields_same(Field* a, Field* b) {
     return fields_have_same_name(a, b) && fields_are_same_type(a, b);
 }
+#endif
 
 

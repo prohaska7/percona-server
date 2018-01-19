@@ -28,7 +28,8 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #if 100000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 100099
 #define TOKU_ALTER_RENAME ALTER_RENAME
 #elif (50600 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50699) || \
-      (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799)
+      (50700 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799) || \
+      (80000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 80099)
 #define TOKU_ALTER_RENAME ALTER_RENAME
 #elif 50500 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50599
 #define TOKU_ALTER_RENAME ALTER_RENAME_56
@@ -284,7 +285,7 @@ enum_alter_inplace_result ha_tokudb::check_if_supported_inplace_alter(
     THD* thd = ha_thd();
 
     // setup context
-    tokudb_alter_ctx* ctx = new tokudb_alter_ctx;
+    tokudb_alter_ctx* ctx = new (*THR_MALLOC) tokudb_alter_ctx;
     ha_alter_info->handler_ctx = ctx;
     ctx->handler_flags =
         fix_handler_flags(thd, table, altered_table, ha_alter_info);
@@ -538,7 +539,9 @@ enum_alter_inplace_result ha_tokudb::check_if_supported_inplace_alter(
 // Prepare for the alter operations
 bool ha_tokudb::prepare_inplace_alter_table(
     TABLE* TOKUDB_UNUSED(altered_table),
-    Alter_inplace_info* ha_alter_info) {
+    Alter_inplace_info* ha_alter_info,
+    const dd::Table *TOKUDB_UNUSED(old_table_def),
+    dd::Table *TOKUDB_UNUSED(new_table_def)) {
 
     TOKUDB_HANDLER_DBUG_ENTER("");
     tokudb_alter_ctx* ctx =
@@ -552,7 +555,9 @@ bool ha_tokudb::prepare_inplace_alter_table(
 // Execute the alter operations.
 bool ha_tokudb::inplace_alter_table(
     TABLE* altered_table,
-    Alter_inplace_info* ha_alter_info) {
+    Alter_inplace_info* ha_alter_info,
+    const dd::Table *TOKUDB_UNUSED(old_table_def),
+    dd::Table *TOKUDB_UNUSED(new_table_def)) {
 
     TOKUDB_HANDLER_DBUG_ENTER("");
 
@@ -893,7 +898,9 @@ int ha_tokudb::alter_table_add_or_drop_column(
 bool ha_tokudb::commit_inplace_alter_table(
     TABLE* TOKUDB_UNUSED(altered_table),
     Alter_inplace_info* ha_alter_info,
-    bool commit) {
+    bool commit,
+    const dd::Table *TOKUDB_UNUSED(from_table_def),
+    dd::Table *TOKUDB_UNUSED(to_table_def)) {
 
     TOKUDB_HANDLER_DBUG_ENTER("");
     

@@ -132,6 +132,7 @@ st_mysql_plugin trx = {
     "Percona TokuDB Storage Engine with Fractal Tree(tm) Technology",
     PLUGIN_LICENSE_GPL,
     trx_init,                   /* plugin init */
+    0,
     trx_done,                   /* plugin deinit */
     TOKUDB_PLUGIN_VERSION,
     NULL,                      /* status variables */
@@ -270,6 +271,7 @@ st_mysql_plugin lock_waits = {
     "Percona TokuDB Storage Engine with Fractal Tree(tm) Technology",
     PLUGIN_LICENSE_GPL,
     lock_waits_init,            /* plugin init */
+    0,
     lock_waits_done,            /* plugin deinit */
     TOKUDB_PLUGIN_VERSION,
     NULL,                       /* status variables */
@@ -410,6 +412,7 @@ st_mysql_plugin locks = {
     "Percona TokuDB Storage Engine with Fractal Tree(tm) Technology",
     PLUGIN_LICENSE_GPL,
     locks_init,                 /* plugin init */
+    0,
     locks_done,                 /* plugin deinit */
     TOKUDB_PLUGIN_VERSION,
     NULL,                       /* status variables */
@@ -553,6 +556,7 @@ st_mysql_plugin file_map = {
     "Percona TokuDB Storage Engine with Fractal Tree(tm) Technology",
     PLUGIN_LICENSE_GPL,
     file_map_init,              /* plugin init */
+    0,
     file_map_done,              /* plugin deinit */
     TOKUDB_PLUGIN_VERSION,
     NULL,                       /* status variables */
@@ -761,6 +765,7 @@ st_mysql_plugin fractal_tree_info = {
     "Percona TokuDB Storage Engine with Fractal Tree(tm) Technology",
     PLUGIN_LICENSE_GPL,
     fractal_tree_info_init,         /* plugin init */
+    0,
     fractal_tree_info_done,         /* plugin deinit */
     TOKUDB_PLUGIN_VERSION,
     NULL,                           /* status variables */
@@ -1058,6 +1063,7 @@ st_mysql_plugin fractal_tree_block_map = {
     "Percona TokuDB Storage Engine with Fractal Tree(tm) Technology",
     PLUGIN_LICENSE_GPL,
     fractal_tree_block_map_init,     /* plugin init */
+    0,
     fractal_tree_block_map_done,     /* plugin deinit */
     TOKUDB_PLUGIN_VERSION,
     NULL,                      /* status variables */
@@ -1194,6 +1200,7 @@ st_mysql_plugin background_job_status = {
     "Percona TokuDB Storage Engine with Fractal Tree(tm) Technology",
     PLUGIN_LICENSE_GPL,
     background_job_status_init,     /* plugin init */
+    0,
     background_job_status_done,     /* plugin deinit */
     TOKUDB_PLUGIN_VERSION,
     NULL,                      /* status variables */

@@ -25,13 +25,14 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #ident "Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved."
 
 #include "hatoku_hton.h"
-
+#include "sql_thd_internal_api.h"
 #include <dlfcn.h>
 
 #include "my_tree.h"
 
 #define TOKU_METADB_NAME "tokudb_meta"
 
+#if 0
 static pfs_key_t tokudb_map_mutex_key;
 
 static PSI_mutex_info all_tokudb_mutexes[] = {
@@ -42,6 +43,7 @@ static PSI_mutex_info all_tokudb_mutexes[] = {
 static PSI_rwlock_info all_tokudb_rwlocks[] = {
     {&num_DBs_lock_key, "num_DBs_lock", 0},
 };
+#endif
 
 typedef struct savepoint_info {
     DB_TXN* txn;
@@ -64,6 +66,7 @@ ha_create_table_option tokudb_index_options[] = {
 static handler* tokudb_create_handler(
     handlerton* hton,
     TABLE_SHARE* table,
+    bool partitioned,
     MEM_ROOT* mem_root);
 
 static void tokudb_print_error(
@@ -105,6 +108,8 @@ static int tokudb_discover_table_existence(
     const char* db,
     const char* name);
 #endif
+
+#if TOKU_INCLUDE_DISCOVER_FRM
 static int tokudb_discover(
     handlerton* hton,
     THD* thd,
@@ -128,6 +133,8 @@ static int tokudb_discover3(
     char* path,
     uchar** frmblob,
     size_t* frmlen);
+#endif
+
 handlerton* tokudb_hton;
 
 const char* ha_tokudb_ext = ".tokudb";
@@ -292,7 +299,7 @@ static int tokudb_init_func(void *p) {
     // 3938: lock the handlerton's initialized status flag for writing
     rwlock_t_lock_write(tokudb_hton_initialized_lock);
 
-#ifdef HAVE_PSI_INTERFACE
+#if 0 && defined(HAVE_PSI_INTERFACE)
     /* Register TokuDB mutex keys with MySQL performance schema */
     int count;
 
@@ -380,6 +387,7 @@ static int tokudb_init_func(void *p) {
     tokudb_hton->savepoint_rollback = tokudb_rollback_to_savepoint;
     tokudb_hton->savepoint_release = tokudb_release_savepoint;
 
+#if TOKU_INCLUDE_DISCOVER_FRM
 #if 100000 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 100099
     tokudb_hton->discover_table = tokudb_discover_table;
     tokudb_hton->discover_table_existence = tokudb_discover_table_existence;
@@ -387,6 +395,7 @@ static int tokudb_init_func(void *p) {
     tokudb_hton->discover = tokudb_discover;
 #if defined(MYSQL_HANDLERTON_INCLUDE_DISCOVER2)
     tokudb_hton->discover2 = tokudb_discover2;
+#endif
 #endif
 #endif
     tokudb_hton->commit = tokudb_commit;
@@ -687,7 +696,9 @@ static int tokudb_done_func(void* p) {
 static handler* tokudb_create_handler(
     handlerton* hton,
     TABLE_SHARE* table,
+    bool partitioned,
     MEM_ROOT* mem_root) {
+    assert_always(!partitioned);
     return new(mem_root) ha_tokudb(hton, table);
 }
 
@@ -806,7 +817,11 @@ bool tokudb_flush_logs(handlerton *hton, bool binlog_group_commit) {
     if (!binlog_group_commit && tokudb::sysvars::checkpoint_on_flush_logs) {
         error = db_env->txn_checkpoint(db_env, 0, 0, 0);
         if (error) {
+#if 0
             my_error(ER_ERROR_DURING_CHECKPOINT, MYF(0), error);
+#else
+            abort();
+#endif
             result = 1;
             goto exit;
         }
@@ -884,7 +899,7 @@ static void tokudb_cleanup_handlers(tokudb_trx_data *trx, DB_TXN *txn) {
     }
 }
 
-#if MYSQL_VERSION_ID >= 50600
+#if 50600 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50799
 extern "C" enum durability_properties thd_get_durability_property(
     const MYSQL_THD thd);
 #endif
@@ -1203,6 +1218,7 @@ static int tokudb_discover_table_existence(
 }
 #endif
 
+#if TOKU_INCLUDE_DISCOVER_FRM
 static int tokudb_discover(
     handlerton* hton,
     THD* thd,
@@ -1300,7 +1316,7 @@ cleanup:
     }
     TOKUDB_DBUG_RETURN(error);
 }
-
+#endif
 
 #define STATPRINT(legend, val) if (legend != NULL && val != NULL) \
     stat_print(thd, \
@@ -1545,8 +1561,11 @@ static void tokudb_cleanup_log_files(void) {
     int error;
 
     if ((error = db_env->txn_checkpoint(db_env, 0, 0, 0)))
+#if 0
         my_error(ER_ERROR_DURING_CHECKPOINT, MYF(0), error);
-
+#else
+        abort();
+#endif
     if ((error = db_env->log_archive(db_env, &names, 0)) != 0) {
         DBUG_PRINT("error", ("log_archive failed (error %d)", error));
         db_env->err(db_env, error, "log_archive");
@@ -1927,6 +1946,7 @@ mysql_declare_plugin(tokudb)
         "Percona TokuDB Storage Engine with Fractal Tree(tm) Technology",
         PLUGIN_LICENSE_GPL,
         tokudb_init_func,          /* plugin init */
+        0,
         tokudb_done_func,          /* plugin deinit */
         TOKUDB_PLUGIN_VERSION,
         toku_global_status_variables_export,  /* status variables */
