@@ -75,7 +75,7 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #else
 #define TOKU_USE_DB_TYPE_TOKUDB 0
 #endif
-#define TOKU_INCLUDE_ALTER_56 0
+#define TOKU_INCLUDE_ALTER_56 1
 #define TOKU_INCLUDE_ALTER_55 0
 #define TOKU_INCLUDE_ROW_TYPE_COMPRESSION 0
 #define TOKU_PARTITION_WRITE_FRM_DATA 0
