@@ -25,10 +25,10 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #ident "Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved."
 
 #include "hatoku_hton.h"
-#include "sql_acl.h"
+#include "sql/auth/sql_acl.h"
 #include "tokudb_dir_cmd.h"
-#include "sql_parse.h"
-#include "sql_plugin.h"
+#include "sql/sql_parse.h"
+#include "sql/sql_plugin.h"
 
 namespace tokudb {
 namespace sysvars {
@@ -900,7 +900,7 @@ static MYSQL_THDVAR_BOOL(
     support_xa_update,
     true);
 
-#if 0
+#if TOKU_INCLUDE_DIR_CMD
 static int dir_cmd_check(THD* thd, struct st_mysql_sys_var* var,
                          void* save, struct st_mysql_value* value) ;
 
@@ -941,11 +941,10 @@ static int dir_cmd_check(THD* thd, struct st_mysql_sys_var* TOKUDB_UNUSED(var),
                          void* save, struct st_mysql_value* value) {
     int error = 0;
     dir_cmd_set_error(thd, error, "");
-#if 0
     if (check_global_access(thd, SUPER_ACL)) {
         return 1;
     }
-#endif
+
     char buff[STRING_BUFFER_USUAL_SIZE];
     int length = sizeof(buff);
     const char *str = value->val_str(value, buff, &length);
@@ -1052,7 +1051,7 @@ st_mysql_sys_var* system_variables[] = {
 #if TOKUDB_DEBUG
     MYSQL_SYSVAR(debug_pause_background_job_manager),
 #endif // TOKUDB_DEBUG
-#if 0
+#if TOKU_INCLUDE_DIR_CMD
     MYSQL_SYSVAR(dir_cmd_last_error),
     MYSQL_SYSVAR(dir_cmd_last_error_string),
     MYSQL_SYSVAR(dir_cmd),

@@ -27,19 +27,19 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #define _HATOKU_DEFINES_H
 
 #include <my_config.h>
-#define MYSQL_SERVER 1
 #include "mysql_version.h"
-#include "sql_table.h"
-#include "handler.h"
-#include "table.h"
-#include "log.h"
-#include "sql_class.h"
-#include "sql_show.h"
-#include <binlog.h>
-#include "debug_sync.h"
-#include "current_thd.h"
+#include "sql/sql_table.h"
+#include "sql/handler.h"
+#include "sql/table.h"
+#include "sql/sql_class.h"
+#include "sql/sql_show.h"
+#include "sql/binlog.h"
+#include "sql/debug_sync.h"
+#include "sql/current_thd.h"
 #include "my_icp.h"
-#include "mysqld.h"
+#include "sql/mysqld.h"
+#undef MYSQL_DYNAMIC_PLUGIN
+#include "sql/log.h"
 
 #undef PACKAGE
 #undef VERSION
@@ -92,6 +92,8 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #define TOKU_INCLUDE_RFR 0
 #define TOKU_INCLUDE_DISCOVER_FRM 0
 #define TOKU_USE_OPEN_TABLES_MAP 1
+#define TOKU_INCLUDE_DIR_CMD 0
+#define TOKU_INCLUDE_PFS 0
 
 #define TOKU_CLUSTERING_IS_COVERING 0
 

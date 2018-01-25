@@ -25,14 +25,14 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #ident "Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved."
 
 #include "hatoku_hton.h"
-#include "sql_thd_internal_api.h"
+#include "sql/sql_thd_internal_api.h"
 #include <dlfcn.h>
 
 #include "my_tree.h"
 
 #define TOKU_METADB_NAME "tokudb_meta"
 
-#if 0
+#if TOKU_INCLUDE_PFS
 static pfs_key_t tokudb_map_mutex_key;
 
 static PSI_mutex_info all_tokudb_mutexes[] = {
@@ -90,8 +90,8 @@ static int tokudb_commit(handlerton* hton, THD* thd, bool all);
 static int tokudb_rollback(handlerton* hton, THD* thd, bool all);
 static int tokudb_xa_prepare(handlerton* hton, THD* thd, bool all);
 static int tokudb_xa_recover(handlerton* hton, XID* xid_list, uint len);
-static int tokudb_commit_by_xid(handlerton* hton, XID* xid);
-static int tokudb_rollback_by_xid(handlerton* hton, XID* xid);
+static xa_status_code tokudb_commit_by_xid(handlerton* hton, XID* xid);
+static xa_status_code tokudb_rollback_by_xid(handlerton* hton, XID* xid);
 static int tokudb_rollback_to_savepoint(
     handlerton* hton,
     THD* thd,
@@ -299,7 +299,7 @@ static int tokudb_init_func(void *p) {
     // 3938: lock the handlerton's initialized status flag for writing
     rwlock_t_lock_write(tokudb_hton_initialized_lock);
 
-#if 0 && defined(HAVE_PSI_INTERFACE)
+#if TOKU_INCLUDE_PFS && defined(HAVE_PSI_INTERFACE)
     /* Register TokuDB mutex keys with MySQL performance schema */
     int count;
 
@@ -1053,7 +1053,7 @@ static int tokudb_xa_recover(handlerton* hton, XID* xid_list, uint len) {
     TOKUDB_DBUG_RETURN((int)num_returned);
 }
 
-static int tokudb_commit_by_xid(handlerton* hton, XID* xid) {
+static xa_status_code tokudb_commit_by_xid(handlerton* hton, XID* xid) {
     TOKUDB_DBUG_ENTER("%p", hton);
     TOKUDB_TRACE_FOR_FLAGS(TOKUDB_DEBUG_XA, "enter");
     int r = 0;
@@ -1069,10 +1069,10 @@ static int tokudb_commit_by_xid(handlerton* hton, XID* xid) {
     r = 0;
 cleanup:
     TOKUDB_TRACE_FOR_FLAGS(TOKUDB_DEBUG_XA, "exit %d", r);
-    TOKUDB_DBUG_RETURN(r);
+    DBUG_RETURN(r == 0 ? XA_OK : XAER_RMERR);
 }
 
-static int tokudb_rollback_by_xid(handlerton* hton, XID*  xid) {
+static xa_status_code tokudb_rollback_by_xid(handlerton* hton, XID*  xid) {
     TOKUDB_DBUG_ENTER("%p", hton);
     TOKUDB_TRACE_FOR_FLAGS(TOKUDB_DEBUG_XA, "enter");
     int r = 0;
@@ -1088,7 +1088,7 @@ static int tokudb_rollback_by_xid(handlerton* hton, XID*  xid) {
     r = 0;
 cleanup:
     TOKUDB_TRACE_FOR_FLAGS(TOKUDB_DEBUG_XA, "exit %d", r);
-    TOKUDB_DBUG_RETURN(r);
+    DBUG_RETURN(r == 0 ? XA_OK : XAER_RMERR);
 }
 
 static int tokudb_savepoint(handlerton * hton, THD * thd, void *savepoint) {
